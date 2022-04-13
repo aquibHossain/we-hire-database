@@ -4,6 +4,7 @@ var cors = require("cors");
 var admin = require("firebase-admin");
 const { MongoClient } = require("mongodb");
 var ObjectId = require('mongodb').ObjectID;
+const stripe = require("stripe")("sk_test_51KiCK6HlIpHzNhGaImExltHRso4TWkngHu4PTIoByELTQKii5jrQtutjdPqoYJcXRfeO1lJ7Q6B9Hsyl010rIBYO00aDYqRX9o")
 const port = process.env.PORT || 5000;
 const app = express();
 app.use(cors());
@@ -46,7 +47,7 @@ async function run() {
     app.post("/categories", async (req, res) => {
       const category = req.body;
       const result = await categories.insertOne(category);
-      res.json(result);
+      res.json(result); 
     });
     app.get("/categories", async (req, res) => {
       const cursor = categories.find({});
@@ -132,6 +133,7 @@ async function run() {
       console.log("updating");
       res.json(result);
     });
+   
     app.post("/users", async (req, res) => {
       const users = req.body;
       console.log(users);
@@ -179,6 +181,36 @@ async function run() {
       }
       res.json({ admin: isAdmin });
     });
+
+    app.post("/create-payment-intent", async (req, res) => {
+      const paymentInfo = req.body;
+      const amount=paymentInfo.price*100
+      // Create a PaymentIntent with the order amount and currency
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: amount,
+        currency: "usd",
+        automatic_payment_methods: {
+          enabled: true,
+        },
+      });
+    
+      res.send({
+        clientSecret: paymentIntent.client_secret,
+      });
+    });
+    app.put('/payment/:id',async(req,res)=>{
+      const id=req.params.id 
+      const payment=req.body
+      const filter={_id:ObjectId(id)}
+      const updateDoc = {
+        $set:
+        {
+          payment:payment
+        }
+      };
+      const result = await addRent.updateOne(filter, updateDoc);
+      res.json(result)
+    })
   } finally {
     //   await client.close();
   }
