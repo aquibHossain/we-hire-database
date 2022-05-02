@@ -82,10 +82,11 @@ async function run() {
     app.get("/find", async (req, res) => {
       const request=req.query;
       const {search,category,areas,min,max}=request;
+      console.log(request);
       const query={category,areas}
       const cursor = addRent.find(query);
       const rent = await cursor.toArray();
-      let result=rent.filter(item=>min<=item.price&&item.price<=max);
+      let result=rent.filter(item=>parseInt(min)<=item.price && item.price<=parseInt(max));
           
         if(search){
           result=result.filter(item=>item.name.toLowerCase().includes(search.toLowerCase()))
@@ -185,7 +186,7 @@ async function run() {
     app.post("/create-payment-intent", async (req, res) => {
       const paymentInfo = req.body;
       const amount=paymentInfo.price*100
-      // Create a PaymentIntent with the order amount and currency
+      
       const paymentIntent = await stripe.paymentIntents.create({
         amount: amount,
         currency: "usd",
